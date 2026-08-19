@@ -9,19 +9,19 @@ const CONFIG = {
 
     client: {
     name: "UWCF",
-    mapTitle: "UWCF Gray Sky Resource Map",
-    demoMapTitle: "DEMO - UWCF Gray Sky Resource Map",
+    mapTitle: "UWCF Blue Sky Resource Map",
+    demoMapTitle: "DEMO - UWCF Blue Sky Resource Map",
     brandColor: "#005291"
 },
 
     // Google Maps configuration
     googleMaps: {
-        apiKey: "AIzaSyAClbVNIqRwa7Yy1kbjU9LIHbgWEp_oV_0"
+        apiKey: "AIzaSyB9BBv0FgbDXt6E6sTMDMJn9h9hxX0_d_Y"
     },
 
     // Google Sheets configuration
     googleSheets: {
-        spreadsheetId: "1OH1m7_PImrYwaeROkAB_THNsxBtjhhNihKY0uZ556tY"
+        spreadsheetId: "1aQrwUlAsEVS66fkLziPviNl46PMowqqmWnybcbe5l0g"
     },
 
     demo: {
@@ -29,7 +29,7 @@ const CONFIG = {
 
     title: "This is a Demo Version",
 
-    message: "This resource map is a demo version of the tool that United Way Central Florida deploys during disasters. The information displayed here is sample data and does not represent actual resources.",
+    message: "This resource map is a demo version of the tool that United Way Central Florida deploys during Blue Skys. The information displayed here is sample data and does not represent actual resources.",
 
     buttonText: "I Understand"
 },
@@ -37,68 +37,22 @@ const CONFIG = {
 resourceCategories: {
     styles: {
 
-        "Boil Water Advisory": {
-            type: "warning"
-        },
-
-        "Charging Station": {
-            background: "#f57c00",
-            border: "#e65100",
-            icon: "charging"
-        },
-
-        "Cooling Station": {
-            background: "#039be5",
-            border: "#0277bd",
-            icon: "snowflake"
-        },
-
-        "FEMA": {
-            background: "#455a64",
-            border: "#263238",
-            icon: "shield"
-        },
-
-        "Food Distribution": {
+        "Food Pantry": {
             background: "#2e7d32",
             border: "#1b5e20",
             icon: "food"
         },
 
-        "Shelters": {
-            background: "#1976d2",
-            border: "#0d47a1",
-            icon: "shelter"
+        "Farmer's Markets": {
+            background: "#558b2f",
+            border: "#33691e",
+            icon: "market"
         },
 
-        "Special Needs Shelters": {
-            background: "#7b1fa2",
-            border: "#4a148c",
-            icon: "specialNeedsShelter"
-        },
-
-        "Supplies & Tarps": {
+        "Community Meals": {
             background: "#ef6c00",
             border: "#bf360c",
-            icon: "hammer"
-        },
-
-        "Sandbags": {
-            background: "#795548",
-            border: "#4e342e",
-            icon: "sandbag"
-        },
-
-        "Volunteer Reception": {
-            background: "#00897b",
-            border: "#00695c",
-            icon: "volunteer"
-        },
-
-        "Donation Drop Off": {
-            background: "#c2185b",
-            border: "#880e4f",
-            icon: "donation"
+            icon: "meal"
         }
     },
 

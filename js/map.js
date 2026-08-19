@@ -49,21 +49,21 @@ const coreLibrary =
     new this.InfoWindow();
 
         this.map = new mapsLibrary.Map(
-            document.getElementById("map"),
-            {
-                center: CONFIG.map.defaultCenter,
-                zoom: CONFIG.map.defaultZoom,
-                mapId: CONFIG.map.mapId,
+    document.getElementById("map"),
+    {
+        center: CONFIG.map.defaultCenter,
+        zoom: CONFIG.map.defaultZoom,
+        mapId: CONFIG.map.mapId,
 
-                mapTypeControl: false,
-                streetViewControl: false,
-                fullscreenControl: true,
-                zoomControl: true,
-                scaleControl: true,
-                gestureHandling: "greedy",
-                clickableIcons: false
-            }
-        );
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: true,
+        zoomControl: true,
+        scaleControl: true,
+        gestureHandling: "greedy",
+        clickableIcons: false
+    }
+);
 
         const resources =
             await window.resourceManager.loadResources();
@@ -445,6 +445,21 @@ getMarkerIcon(iconName) {
             <path d="M12 3v10"/>
             <path d="M9 10l3 3 3-3"/>
         `,  
+                market: `
+            <path d="M6 9c0-3 2-5 6-6 0 4-2 6-6 6"/>
+            <path d="M12 10c0-3 2-5 6-6 0 4-2 6-6 6"/>
+            <path d="M12 21V9"/>
+            <path d="M7 21h10"/>
+        `,
+
+        meal: `
+            <circle cx="12" cy="12" r="5"/>
+            <path d="M4 3v7"/>
+            <path d="M2 3v4c0 2 4 2 4 0V3"/>
+            <path d="M4 10v11"/>
+            <path d="M20 3v18"/>
+            <path d="M20 3c-2 2-2 6 0 8"/>
+        `,
 
         default: `
             <circle cx="12" cy="12" r="3"/>
