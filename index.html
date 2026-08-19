@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title id="page-title">Disaster Resource Map</title>
+
+    <!-- Load our stylesheet -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <div
+    id="demo-overlay"
+    class="demo-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="demo-overlay-title"
+>
+    <div class="demo-overlay__notice">
+
+        <h2 id="demo-overlay-title"></h2>
+
+        <p id="demo-overlay-message"></p>
+
+        <button
+            type="button"
+            id="demo-overlay-dismiss"
+        ></button>
+
+    </div>
+</div>
+<header>
+    <h1 id="map-title">Disaster Resource Map</h1>
+
+    <button
+        type="button"
+        id="mobile-resource-button"
+        class="mobile-resource-button"
+    >
+        ☰ Resources
+    </button>
+</header>
+
+<main class="app-container">
+
+   <aside class="sidebar" id="resource-sidebar">
+
+    <div class="resource-search">
+
+        <label for="resource-search-input">
+            Search resources
+        </label>
+
+        <div class="resource-search__controls">
+
+            <input
+                type="search"
+                id="resource-search-input"
+                placeholder="Name, address, city, or ZIP"
+                autocomplete="off"
+            >
+
+            <button
+                type="button"
+                id="resource-search-submit"
+            >
+                Search
+            </button>
+
+            <button
+                type="button"
+                id="resource-search-clear"
+                hidden
+            >
+                Clear
+            </button>
+
+        </div>
+
+    </div>
+
+    <div class="location-tools">
+
+        <h3 class="sidebar-section-title">
+            Location
+        </h3>
+
+        <button
+            type="button"
+            id="near-me-button"
+        >
+            Use My Location
+        </button>
+
+        <div
+            id="near-me-radius-container"
+            class="near-me-radius"
+            hidden
+        >
+            <label for="near-me-radius">
+                Distance
+            </label>
+
+            <select id="near-me-radius">
+                <option value="5" selected>
+                    Within 5 miles
+                </option>
+
+                <option value="10">
+                    Within 10 miles
+                </option>
+
+                <option value="25">
+                    Within 25 miles
+                </option>
+
+                <option value="all">
+                    All Distances
+                </option>
+            </select>
+        </div>
+
+        <button
+            type="button"
+            id="near-me-reset"
+            hidden
+        >
+            Reset Location
+        </button>
+
+        <p
+            id="near-me-status"
+            class="near-me-status"
+            aria-live="polite"
+        ></p>
+
+    </div>
+
+    <h3 class="sidebar-section-title">
+        Results
+    </h3>
+
+    <p
+        id="resource-search-results"
+        class="resource-search__results"
+        aria-live="polite"
+    ></p>
+
+    <div
+        id="resource-results-list"
+        class="resource-results-list"
+    ></div>
+
+    <h2>Resource Filters</h2>
+
+    <div
+        id="resource-filter-buttons"
+        class="resource-filter-buttons"
+    ></div>
+
+</aside>
+
+   <section class="map-container">
+
+    <div
+        id="map-status"
+        class="map-status"
+        role="status"
+        aria-live="polite"
+    >
+        <div class="map-status__content">
+
+            <div
+                class="map-status__spinner"
+                aria-hidden="true"
+            ></div>
+
+            <h2 id="map-status-title">
+                Loading Resource Map
+            </h2>
+
+            <p id="map-status-message">
+                Preparing Google Maps...
+            </p>
+
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+</section>
+
+</main>
+<script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
+
+    <!-- Configuration -->
+<script src="js/config.js"></script>
+
+<!-- Resource architecture -->
+<script src="js/resource.js"></script>
+<script src="js/infowindow.js"></script>
+<script src="js/resultCard.js"></script>
+<script src="js/locationManager.js"></script>
+<script src="js/resources.js"></script>
+<script src="js/map.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+
+</html>
