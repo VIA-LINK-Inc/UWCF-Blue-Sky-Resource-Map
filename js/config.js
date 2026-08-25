@@ -16,7 +16,7 @@ const CONFIG = {
 
     // Google Maps configuration
     googleMaps: {
-        apiKey: "AIzaSyB9BBv0FgbDXt6E6sTMDMJn9h9hxX0_d_Y"
+        apiKey: "AIzaSyAjjm24_xUxakT0zeyROPIK_AZv1qYfuqY"
     },
 
     // Google Sheets configuration
