@@ -97,11 +97,37 @@ class Resource {
      * for mobile devices.
      */
     getPhoneUrl() {
-        const normalizedPhone =
+
+        /*
+         * CHANGED (Veterans map):
+         * Dial only the FIRST full phone number in the cell.
+         * Extensions ("ext. 123", "x123") and second numbers
+         * ("or 863-555-0199") are left off the link but still
+         * shown as text in the popup and card.
+         */
+        const phoneNumberPattern =
+            /(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/;
+
+        const match =
+            this.phone.match(phoneNumberPattern);
+
+        if (match) {
+            return `tel:${match[0].replace(/[^\d+]/g, "")}`;
+        }
+
+        /*
+         * Short numbers like 211 or 988 have no area code,
+         * so they won't match above. Allow plain numbers
+         * of 3 to 11 digits.
+         */
+        const digitsOnly =
             this.phone.replace(/[^\d+]/g, "");
 
-        return normalizedPhone
-            ? `tel:${normalizedPhone}`
+        const digitCount =
+            digitsOnly.replace(/\D/g, "").length;
+
+        return digitCount >= 3 && digitCount <= 11
+            ? `tel:${digitsOnly}`
             : "";
     }
 
