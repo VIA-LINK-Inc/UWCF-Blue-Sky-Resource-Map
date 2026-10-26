@@ -549,3 +549,199 @@ body.demo-mode-active {
         font-size: 22px;
     }
 }
+/* Veterans map: bold field labels in popups and sidebar cards */
+.resource-popup p > strong,
+.resource-result__eligibility > strong {
+    font-weight: 800;
+    color: var(--brand-primary, #005291);
+    font-size: 1em;
+    letter-spacing: 0.02em;
+}
+/* Veterans map: keep popup buttons visible while details scroll */
+.resource-popup__actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    background: #ffffff;
+    padding-top: 10px;
+    padding-bottom: 6px;
+    margin-top: 8px;
+    box-shadow: 0 -6px 8px -6px rgba(0, 0, 0, 0.25);
+}
+/* ================================================================
+   Veterans map: "About this map" button, panel, and page layout
+   Paste this at the very bottom of css/styles.css
+   ================================================================ */
+
+.about-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 12px;
+    padding: 6px 12px;
+    border: 1px solid var(--brand-primary, #005291);
+    border-radius: 999px;
+    background: #ffffff;
+    color: var(--brand-primary, #005291);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.about-button:hover,
+.about-button:focus-visible {
+    background: #eef4fa;
+}
+
+.about-button__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--brand-primary, #005291);
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-style: italic;
+    font-family: Georgia, "Times New Roman", serif;
+}
+
+.about-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.about-overlay[hidden] {
+    display: none;
+}
+
+.about-panel {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 22px 24px;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #1f1f1f;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.about-panel h2 {
+    margin: 0 32px 12px 0;
+    color: var(--brand-primary, #005291);
+    font-size: 1.25rem;
+}
+
+.about-panel p {
+    margin: 0;
+    line-height: 1.55;
+}
+
+.about-panel a {
+    color: var(--brand-primary, #005291);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.about-panel__close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: #555555;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.about-panel__close:hover,
+.about-panel__close:focus-visible {
+    background: #f0f0f0;
+}
+
+/* Desktop: message typed out in the header */
+.about-inline {
+    flex: 1 1 320px;
+    max-width: 900px;
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    color: inherit;
+    opacity: 0.95;
+}
+
+.about-inline a {
+    color: inherit;
+    font-weight: 700;
+    text-decoration: underline;
+    overflow-wrap: anywhere;
+}
+
+/* Desktop: hide the button, show the typed-out message */
+@media (min-width: 769px) {
+    .about-button {
+        display: none;
+    }
+
+    /* Keep the title on one line; the description wraps instead */
+    header h1 {
+        flex-shrink: 0;
+    }
+}
+
+/* Phones and small tablets: hide the message, show the button */
+@media (max-width: 768px) {
+    .about-inline {
+        display: none;
+    }
+
+    /* Push About to the right, next to the Resources button */
+    .about-button {
+        margin-left: auto;
+        padding: 6px 10px;
+    }
+}
+
+/* ================================================================
+   Veterans map: page layout
+   The header takes whatever height it needs (description on
+   desktop, a wrapped title on phones) and the map fills the rest,
+   instead of assuming a fixed header height.
+   ================================================================ */
+
+body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+}
+
+header {
+    flex: 0 0 auto;
+}
+
+.app-container {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
+}
+
+.map-container,
+#map {
+    min-height: 0;
+}

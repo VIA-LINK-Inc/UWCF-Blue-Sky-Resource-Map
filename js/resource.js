@@ -43,6 +43,14 @@ class Resource {
         this.website =
             String(data.website ?? "").trim();
 
+        // NEW (Veterans map)
+        this.eligibility =
+            String(data.eligibility ?? "").trim();
+
+        // NEW (Veterans map): the "Insurance / Cost" column
+        this.cost =
+            String(data.cost ?? "").trim();
+
         this.active =
             Boolean(data.active);
 
@@ -56,7 +64,7 @@ class Resource {
      * Confirms that the minimum information needed
      * for a map marker exists.
      */
-      isValid() {
+    isValid() {
         return (
             this.name.length > 0 &&
             Number.isFinite(this.latitude) &&
@@ -71,7 +79,7 @@ class Resource {
      * Produces a Google Maps directions URL.
      *
      * Whether the Directions button is displayed
-     * will later be controlled by whether Address exists.
+     * is controlled by whether Address exists.
      */
     getDirectionsUrl() {
         const destination = encodeURIComponent(
@@ -94,6 +102,63 @@ class Resource {
 
         return normalizedPhone
             ? `tel:${normalizedPhone}`
+            : "";
+    }
+
+    /**
+     * NEW (Veterans map):
+     * Produces a safe website link.
+     *
+     * Entries typed without https:// (for example
+     * "www.example.org") get it added automatically,
+     * so they no longer disappear from the map.
+     * Only normal http/https web addresses are allowed.
+     */
+    getWebsiteUrl() {
+        let text = this.website;
+
+        if (!text) {
+            return "";
+        }
+
+        if (!/^https?:\/\//i.test(text)) {
+            text = `https://${text}`;
+        }
+
+        try {
+            const url = new URL(text);
+
+            if (
+                (url.protocol === "https:" ||
+                    url.protocol === "http:") &&
+                url.hostname.includes(".")
+            ) {
+                return url.href;
+            }
+        }
+        catch (error) {
+            console.warn(
+                "Invalid resource website:",
+                this.website
+            );
+        }
+
+        return "";
+    }
+
+    /**
+     * NEW (Veterans map):
+     * Produces an email link that opens the
+     * visitor's mail app. Only plain email
+     * addresses are accepted.
+     */
+    getEmailUrl() {
+        const isPlainEmail =
+            /^[A-Za-z0-9._+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/
+                .test(this.email);
+
+        return isPlainEmail
+            ? `mailto:${this.email}`
             : "";
     }
 }

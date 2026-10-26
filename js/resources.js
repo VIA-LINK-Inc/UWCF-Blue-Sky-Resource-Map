@@ -17,14 +17,18 @@ class ResourceManager {
         ]);
 
         /*
-         * A sheet must contain these columns
+         * CHANGED (Veterans map):
+         * A sheet must contain one header from EACH group
          * before it can be treated as a resource tab.
+         *
+         * The name column may be called either
+         * "Resource" or "Organization".
          */
         this.requiredHeaders = [
-            "resource",
-            "latitude",
-            "longitude",
-            "active"
+            ["resource", "organization"],
+            ["latitude"],
+            ["longitude"],
+            ["active"]
         ];
     }
 
@@ -374,10 +378,11 @@ class ResourceManager {
      * hyphens do not matter.
      *
      * Examples:
-     * "Phone"       -> "phone"
-     * "PHONE"       -> "phone"
-     * "Phone Number" -> "phonenumber"
-     * "phone_number" -> "phonenumber"
+     * "Phone"            -> "phone"
+     * "PHONE"            -> "phone"
+     * "Phone Number"     -> "phonenumber"
+     * "phone_number"     -> "phonenumber"
+     * "Insurance / Cost" -> "insurancecost"
      */
     normalizeHeaders(headerRow) {
         return headerRow.map(
@@ -394,16 +399,21 @@ class ResourceManager {
     }
 
     /**
+     * CHANGED (Veterans map):
      * Ensures a tab looks like a resource tab before
-     * trying to process its rows.
+     * trying to process its rows. Each required group
+     * is satisfied if ANY of its header names is present.
      */
     hasRequiredHeaders(headers) {
         return this.requiredHeaders.every(
-            (requiredHeader) =>
-                headers.includes(
-                    this.normalizeHeader(
-                        requiredHeader
-                    )
+            (headerGroup) =>
+                headerGroup.some(
+                    (headerName) =>
+                        headers.includes(
+                            this.normalizeHeader(
+                                headerName
+                            )
+                        )
                 )
         );
     }
@@ -454,11 +464,14 @@ class ResourceManager {
                 `${sheetName}-${rowIndex + 2}`,
 
             /*
-             * The spreadsheet's Resource column
-             * becomes Resource.name internally.
+             * CHANGED (Veterans map):
+             * The spreadsheet's Organization (or Resource)
+             * column becomes Resource.name internally.
              */
             name:
-                rowData.resource ?? "",
+                rowData.organization ??
+                rowData.resource ??
+                "",
 
             /*
              * The tab name becomes the category.
@@ -472,8 +485,15 @@ class ResourceManager {
             latitude: rowData.latitude,
             longitude: rowData.longitude,
 
+            /*
+             * CHANGED: also accepts County or
+             * County/Parish headers.
+             */
             parish:
-                rowData.parish ?? "",
+                rowData.parish ??
+                rowData.county ??
+                rowData.countyparish ??
+                "",
 
             description:
                 rowData.description ?? "",
@@ -489,6 +509,18 @@ class ResourceManager {
 
             website:
                 rowData.website ?? "",
+
+            /*
+             * NEW (Veterans map) columns.
+             * "Insurance / Cost" normalizes to "insurancecost".
+             */
+            eligibility:
+                rowData.eligibility ?? "",
+
+            cost:
+                rowData.insurancecost ??
+                rowData.cost ??
+                "",
 
             active:
                 this.convertToBoolean(

@@ -15,20 +15,42 @@ class InfoWindowBuilder {
     }
 
     /**
-     * Only permits normal web addresses.
+     * NEW (Veterans map):
+     * Escapes text, then keeps line breaks
+     * typed inside a spreadsheet cell.
+     */
+    formatMultiline(value) {
+        return this.escapeHtml(value)
+            .replace(/\r?\n/g, "<br>");
+    }
+
+    /**
+     * CHANGED (Veterans map):
+     * Only permits normal web addresses, and adds
+     * https:// when a cell starts with "www." or
+     * just a domain name. Kept here in case other
+     * files call it.
      */
     getSafeWebsiteUrl(website) {
-        if (!website) {
+        let text =
+            String(website ?? "").trim();
+
+        if (!text) {
             return "";
+        }
+
+        if (!/^https?:\/\//i.test(text)) {
+            text = `https://${text}`;
         }
 
         try {
             const url =
-                new URL(website);
+                new URL(text);
 
             if (
-                url.protocol === "https:" ||
-                url.protocol === "http:"
+                (url.protocol === "https:" ||
+                    url.protocol === "http:") &&
+                url.hostname.includes(".")
             ) {
                 return url.href;
             }
@@ -57,7 +79,7 @@ class InfoWindowBuilder {
             this.escapeHtml(resource.parish);
 
         const hours =
-            this.escapeHtml(resource.hours);
+            this.formatMultiline(resource.hours);
 
         const phone =
             this.escapeHtml(resource.phone);
@@ -69,7 +91,15 @@ class InfoWindowBuilder {
             this.escapeHtml(resource.website);
 
         const description =
-            this.escapeHtml(resource.description);
+            this.formatMultiline(resource.description);
+
+        // NEW (Veterans map)
+        const eligibility =
+            this.formatMultiline(resource.eligibility);
+
+        // NEW (Veterans map)
+        const cost =
+            this.formatMultiline(resource.cost);
 
         const websiteUrl =
             this.getSafeWebsiteUrl(
@@ -88,10 +118,15 @@ class InfoWindowBuilder {
         const phoneUrl =
             resource.getPhoneUrl();
 
+        // NEW (Veterans map)
+        const emailUrl =
+            resource.getEmailUrl();
+
         const hasActions =
             directionsUrl ||
             phoneUrl ||
-            websiteUrl;
+            websiteUrl ||
+            emailUrl;
 
         return `
             <article class="resource-popup">
@@ -182,6 +217,28 @@ class InfoWindowBuilder {
                 }
 
                 ${
+                    eligibility
+                        ? `
+                            <p>
+                                <strong>Eligibility</strong><br>
+                                ${eligibility}
+                            </p>
+                        `
+                        : ""
+                }
+
+                ${
+                    cost
+                        ? `
+                            <p>
+                                <strong>Insurance / Cost</strong><br>
+                                ${cost}
+                            </p>
+                        `
+                        : ""
+                }
+
+                ${
                     hasActions
                         ? `
                             <div class="resource-popup__actions">
@@ -219,6 +276,16 @@ class InfoWindowBuilder {
                                                 rel="noopener noreferrer"
                                             >
                                                 Website
+                                            </a>
+                                        `
+                                        : ""
+                                }
+
+                                ${
+                                    emailUrl
+                                        ? `
+                                            <a href="${emailUrl}" target="_top">
+                                                Email
                                             </a>
                                         `
                                         : ""

@@ -1,7 +1,7 @@
 /**
- * Loads the Google Maps JavaScript API asynchronously.
+ * Starts the resource map application.
  *
- * The API key comes from config.local.js, which is excluded from Git.
+ * Settings, including the API key, come from js/config.js.
  */
 function updateMapStatus(title, message) {
     const status = document.getElementById("map-status");
@@ -67,6 +67,7 @@ function showMapError(error) {
 
     console.error("Application failed to start:", error);
 }
+
 function loadGoogleMapsApi() {
 
     // Avoid loading Google Maps more than once.
@@ -108,6 +109,7 @@ function loadGoogleMapsApi() {
         document.head.appendChild(script);
     });
 }
+
 function updateNearbyResults() {
 
     const resultsList =
@@ -169,6 +171,7 @@ function updateNearbyResults() {
 
 /**
  * Connects the sidebar buttons to the map filtering system.
+ * Buttons follow the spreadsheet's tab order.
  */
 function initializeFilterButtons() {
     const container =
@@ -181,8 +184,8 @@ function initializeFilterButtons() {
         return;
     }
 
-   const orderedCategories =
-    window.resourceManager.getCategories();
+    const orderedCategories =
+        window.resourceManager.getCategories();
 
     container.innerHTML = "";
 
@@ -252,9 +255,10 @@ function initializeFilterButtons() {
 
 function initializeResourceSearch() {
     const searchControls =
-    document.querySelector(
-        ".resource-search__controls"
-    );
+        document.querySelector(
+            ".resource-search__controls"
+        );
+
     const searchInput =
         document.getElementById("resource-search-input");
 
@@ -267,62 +271,63 @@ function initializeResourceSearch() {
     const resultsText =
         document.getElementById("resource-search-results");
 
-        const resultsList =
-    document.getElementById("resource-results-list");
+    const resultsList =
+        document.getElementById("resource-results-list");
 
     if (
-    !searchControls ||
-    !searchInput ||
-    !searchButton ||
-    !clearButton ||
-    !resultsText ||
-    !resultsList
-) {
-    console.error("Search controls could not be initialized.", {
-        searchInput,
-        searchButton,
-        clearButton,
-        resultsText,
-        resultsList
-    });
+        !searchControls ||
+        !searchInput ||
+        !searchButton ||
+        !clearButton ||
+        !resultsText ||
+        !resultsList
+    ) {
+        console.error("Search controls could not be initialized.", {
+            searchInput,
+            searchButton,
+            clearButton,
+            resultsText,
+            resultsList
+        });
 
-    return;
-}
-
-const runSearch = () => {
-    const query = searchInput.value.trim();
-
-    const visibleMarkers =
-        window.mapManager.searchMarkers(query, true);
-
-    const resultCount = visibleMarkers.length;
-
-    resultsList.innerHTML = "";
-
-    for (const marker of visibleMarkers) {
-    const card =
-        window.resultCardBuilder.build(marker);
-
-    resultsList.appendChild(card);
-}
-
-    clearButton.hidden = query === "";
-    searchControls.classList.toggle(
-    "resource-search__controls--with-clear",
-    query !== ""
-);
-
-    if (query === "") {
-        resultsText.textContent = "";
-        resultsList.innerHTML = "";
         return;
     }
 
-    resultsText.textContent =
-        resultCount === 1
-            ? "1 resource found"
-            : `${resultCount} resources found`;
-};
+    const runSearch = () => {
+        const query = searchInput.value.trim();
+
+        const visibleMarkers =
+            window.mapManager.searchMarkers(query, true);
+
+        const resultCount = visibleMarkers.length;
+
+        resultsList.innerHTML = "";
+
+        for (const marker of visibleMarkers) {
+            const card =
+                window.resultCardBuilder.build(marker);
+
+            resultsList.appendChild(card);
+        }
+
+        clearButton.hidden = query === "";
+
+        searchControls.classList.toggle(
+            "resource-search__controls--with-clear",
+            query !== ""
+        );
+
+        if (query === "") {
+            resultsText.textContent = "";
+            resultsList.innerHTML = "";
+            return;
+        }
+
+        resultsText.textContent =
+            resultCount === 1
+                ? "1 resource found"
+                : `${resultCount} resources found`;
+    };
 
     searchButton.addEventListener("click", runSearch);
 
@@ -339,15 +344,18 @@ const runSearch = () => {
         window.mapManager.searchMarkers("", true);
 
         clearButton.hidden = true;
+
         searchControls.classList.remove(
-    "resource-search__controls--with-clear"
-);
+            "resource-search__controls--with-clear"
+        );
+
         resultsText.textContent = "";
         resultsList.innerHTML = "";
 
         searchInput.focus();
     });
 }
+
 function initializeNearMe() {
 
     const button =
@@ -399,7 +407,6 @@ function initializeNearMe() {
             button.disabled = true;
 
             let location;
-            let isTestLocation = false;
 
             try {
                 location =
@@ -408,17 +415,31 @@ function initializeNearMe() {
             }
             catch (locationError) {
 
+                /*
+                 * CHANGED (Veterans map):
+                 * If location can't be found, say so instead of
+                 * pretending the visitor is at the map's center.
+                 * Error code 1 means the visitor (or the website
+                 * the map is embedded in) blocked location access.
+                 */
                 console.warn(
-                    "Live location unavailable. " +
-                    "Using the development test location.",
+                    "Live location unavailable:",
                     locationError
                 );
 
-                        location = {
-            ...CONFIG.map.defaultCenter
-                };
+                status.textContent =
+                    locationError?.code === 1
+                        ? "Location access is turned off. " +
+                          "To use Near Me, allow location for " +
+                          "this site in your browser settings, " +
+                          "then try again."
+                        : "We couldn't find your location. " +
+                          "Please try again, or use the search " +
+                          "box to look up resources by name or " +
+                          "city.";
 
-                isTestLocation = true;
+                button.disabled = false;
+                return;
             }
 
             try {
@@ -445,9 +466,7 @@ function initializeNearMe() {
                     false;
 
                 status.textContent =
-                    isTestLocation
-                        ? `Using test location: ${CONFIG.client.name}`
-                        : "Location found";
+                    "Location found";
             }
             catch (processingError) {
 
@@ -535,7 +554,7 @@ function initializeMobileSidebar() {
 }
 
 function initializeClientBranding() {
-        const brandColor =
+    const brandColor =
         CONFIG.client?.brandColor;
 
     if (brandColor) {
@@ -565,6 +584,164 @@ function initializeClientBranding() {
     if (mapTitle) {
         mapTitle.textContent = title;
     }
+}
+
+/**
+ * NEW (Veterans map):
+ * Adds an "About this map" button next to the header
+ * title. It opens a panel with the text from
+ * CONFIG.about, ending with a clickable email link.
+ * Built entirely here, so index.html doesn't change.
+ */
+function initializeAboutPanel() {
+
+    const about = CONFIG.about;
+
+    if (!about?.enabled) {
+        return;
+    }
+
+    const mapTitle =
+        document.getElementById("map-title");
+
+    if (!mapTitle) {
+        console.warn(
+            "About button could not be added: #map-title not found."
+        );
+
+        return;
+    }
+
+    // The header button.
+    const openButton =
+        document.createElement("button");
+
+    openButton.type = "button";
+    openButton.className = "about-button";
+    openButton.setAttribute("aria-haspopup", "dialog");
+    openButton.setAttribute(
+        "aria-label",
+        about.title || "About this map"
+    );
+
+    const icon = document.createElement("span");
+    icon.className = "about-button__icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = "i";
+
+    const buttonLabel = document.createElement("span");
+    buttonLabel.textContent =
+        about.buttonText || "About this map";
+
+    openButton.append(icon, buttonLabel);
+
+    mapTitle.insertAdjacentElement(
+        "afterend",
+        openButton
+    );
+
+    // The dimmed backdrop and panel.
+    const overlay =
+        document.createElement("div");
+
+    overlay.className = "about-overlay";
+    overlay.hidden = true;
+
+    const panel =
+        document.createElement("div");
+
+    panel.className = "about-panel";
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-modal", "true");
+    panel.setAttribute("aria-labelledby", "about-panel-title");
+
+    const closeButton =
+        document.createElement("button");
+
+    closeButton.type = "button";
+    closeButton.className = "about-panel__close";
+    closeButton.setAttribute("aria-label", "Close");
+    closeButton.textContent = "✕";
+
+    const heading =
+        document.createElement("h2");
+
+    heading.id = "about-panel-title";
+    heading.textContent =
+        about.title || "About This Map";
+
+    // Fills an element with the message, ending
+    // with a clickable email link.
+    const email =
+        String(about.email ?? "").trim();
+
+    const fillMessage = (element) => {
+        element.textContent =
+            String(about.message ?? "").trim();
+
+        if (email) {
+            const emailLink =
+                document.createElement("a");
+
+            emailLink.href = `mailto:${email}`;
+            emailLink.target = "_top";
+            emailLink.textContent = email;
+
+            element.append(" ", emailLink, ".");
+        }
+    };
+
+    const message =
+        document.createElement("p");
+
+    fillMessage(message);
+
+    panel.append(closeButton, heading, message);
+
+    /*
+     * Desktop: the same message typed out in the header.
+     * CSS shows this on wide screens and the button
+     * on phones (see the About block in styles.css).
+     */
+    const inlineMessage =
+        document.createElement("p");
+
+    inlineMessage.className = "about-inline";
+
+    fillMessage(inlineMessage);
+
+    mapTitle.insertAdjacentElement(
+        "afterend",
+        inlineMessage
+    );
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+
+    const openPanel = () => {
+        overlay.hidden = false;
+        closeButton.focus();
+    };
+
+    const closePanel = () => {
+        overlay.hidden = true;
+        openButton.focus();
+    };
+
+    openButton.addEventListener("click", openPanel);
+    closeButton.addEventListener("click", closePanel);
+
+    // Clicking the dimmed area outside the panel closes it.
+    overlay.addEventListener("click", (event) => {
+        if (event.target === overlay) {
+            closePanel();
+        }
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !overlay.hidden) {
+            closePanel();
+        }
+    });
 }
 
 function initializeDemoMode() {
@@ -647,6 +824,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("Application starting...");
 
     initializeClientBranding();
+    initializeAboutPanel();
     initializeDemoMode();
 
     try {
