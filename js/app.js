@@ -110,17 +110,70 @@ function loadGoogleMapsApi() {
     });
 }
 
+/* ================================================================
+   Search, ZIP, filter, and Near Me state
+   CHANGED (Veterans map): these pieces now work together.
+   ================================================================ */
+
+/*
+ * zipActive is true while the map is showing resources
+ * around a searched ZIP code (rather than the visitor's
+ * own location from "Use My Location").
+ */
+const searchState = {
+    zipActive: false
+};
+
+// ZIP lookups are remembered for the visit, so repeat
+// searches don't ask Google again.
+const zipLocationCache = new Map();
+
+// Default distance for a ZIP search. Must match a value
+// in the Distance dropdown in index.html.
+const ZIP_SEARCH_RADIUS_MILES = "10";
+
+function getUiElements() {
+    return {
+        searchControls:
+            document.querySelector(".resource-search__controls"),
+        searchInput:
+            document.getElementById("resource-search-input"),
+        clearButton:
+            document.getElementById("resource-search-clear"),
+        resultsText:
+            document.getElementById("resource-search-results"),
+        resultsList:
+            document.getElementById("resource-results-list"),
+        nearMeStatus:
+            document.getElementById("near-me-status"),
+        radiusContainer:
+            document.getElementById("near-me-radius-container"),
+        radiusSelect:
+            document.getElementById("near-me-radius"),
+        resetButton:
+            document.getElementById("near-me-reset")
+    };
+}
+
+function renderResultCards(markers) {
+    const { resultsList } = getUiElements();
+
+    if (!resultsList) {
+        return;
+    }
+
+    resultsList.innerHTML = "";
+
+    for (const marker of markers) {
+        resultsList.appendChild(
+            window.resultCardBuilder.build(marker)
+        );
+    }
+}
+
 function updateNearbyResults() {
 
-    const resultsList =
-        document.getElementById(
-            "resource-results-list"
-        );
-
-    const resultsText =
-        document.getElementById(
-            "resource-search-results"
-        );
+    const { resultsList, resultsText } = getUiElements();
 
     if (
         !resultsList ||
@@ -137,17 +190,7 @@ function updateNearbyResults() {
                 window.mapManager.visibleMarkers
             );
 
-    resultsList.innerHTML = "";
-
-    for (const marker of nearbyMarkers) {
-
-        const card =
-            window.resultCardBuilder.build(
-                marker
-            );
-
-        resultsList.appendChild(card);
-    }
+    renderResultCards(nearbyMarkers);
 
     if (nearbyMarkers.length === 0) {
 
@@ -157,7 +200,8 @@ function updateNearbyResults() {
 
         resultsText.textContent =
             radius !== null
-                ? `No resources found within ${radius} miles`
+                ? `No resources found within ${radius} miles. ` +
+                  "Try a larger distance."
                 : "No nearby resources found";
 
         return;
@@ -167,6 +211,139 @@ function updateNearbyResults() {
         nearbyMarkers.length === 1
             ? "1 nearby resource"
             : `${nearbyMarkers.length} nearby resources`;
+}
+
+/**
+ * Redraws the Results list to match what the map
+ * is currently showing.
+ */
+function refreshResultsList() {
+    const { resultsList, resultsText } = getUiElements();
+
+    if (!resultsList || !resultsText) {
+        return;
+    }
+
+    // A location (Near Me or ZIP) lists by distance.
+    if (window.mapManager.userLocation) {
+        updateNearbyResults();
+        return;
+    }
+
+    // A text search lists its matches.
+    if (window.mapManager.searchQuery !== "") {
+        const markers = window.mapManager.visibleMarkers;
+
+        renderResultCards(markers);
+
+        resultsText.textContent =
+            markers.length === 1
+                ? "1 resource found"
+                : `${markers.length} resources found`;
+
+        return;
+    }
+
+    // Nothing searched: empty list.
+    resultsList.innerHTML = "";
+    resultsText.textContent = "";
+}
+
+/**
+ * Empties the search box and hides its Clear button.
+ * Does not change the map by itself.
+ */
+function clearSearchBox() {
+    const {
+        searchControls,
+        searchInput,
+        clearButton
+    } = getUiElements();
+
+    if (searchInput) {
+        searchInput.value = "";
+    }
+
+    if (clearButton) {
+        clearButton.hidden = true;
+    }
+
+    searchControls?.classList.remove(
+        "resource-search__controls--with-clear"
+    );
+}
+
+/**
+ * Removes the location (Near Me or ZIP) from the map
+ * and hides the Distance and Reset controls.
+ */
+function clearLocation() {
+    const {
+        nearMeStatus,
+        radiusContainer,
+        radiusSelect,
+        resetButton
+    } = getUiElements();
+
+    window.mapManager.clearUserLocation();
+
+    if (nearMeStatus) {
+        nearMeStatus.textContent = "";
+    }
+
+    if (radiusContainer) {
+        radiusContainer.hidden = true;
+    }
+
+    if (resetButton) {
+        resetButton.hidden = true;
+    }
+
+    if (radiusSelect) {
+        radiusSelect.value = "5";
+    }
+
+    searchState.zipActive = false;
+}
+
+/**
+ * Looks up the center of a ZIP code with Google.
+ * Requires the Geocoding API to be enabled for the
+ * project's API key.
+ */
+async function lookUpZipLocation(zip) {
+    if (zipLocationCache.has(zip)) {
+        return zipLocationCache.get(zip);
+    }
+
+    const { Geocoder } =
+        await google.maps.importLibrary("geocoding");
+
+    const geocoder = new Geocoder();
+
+    const response = await geocoder.geocode({
+        address: zip,
+        componentRestrictions: {
+            country: "US",
+            postalCode: zip
+        }
+    });
+
+    const point =
+        response?.results?.[0]?.geometry?.location;
+
+    if (!point) {
+        throw new Error(`ZIP ${zip} could not be found.`);
+    }
+
+    const location = {
+        lat: point.lat(),
+        lng: point.lng()
+    };
+
+    zipLocationCache.set(zip, location);
+
+    return location;
 }
 
 /**
@@ -190,41 +367,34 @@ function initializeFilterButtons() {
     container.innerHTML = "";
 
     /*
-     * "All" always exists because it represents
-     * every currently active resource.
+     * CHANGED (Veterans map):
+     * If a text search plus this filter would show nothing,
+     * the search is cleared automatically so the filter
+     * shows its resources. A ZIP search is kept, since
+     * filtering within a distance is useful; its message
+     * suggests a larger distance if nothing is close.
      */
-    const allButton =
-        document.createElement("button");
+    const handleFilterClick = (category) => {
+        const visibleCount =
+            window.mapManager.filterMarkers(category);
 
-    allButton.type = "button";
-    allButton.textContent = "All";
-    allButton.dataset.category = "All";
-    allButton.classList.add(
-        "resource-filter-button"
-    );
-
-    allButton.addEventListener(
-        "click",
-        () => {
-            window.mapManager.filterMarkers(
-                "All"
-            );
-            updateNearbyResults();
+        if (
+            visibleCount === 0 &&
+            window.mapManager.searchQuery !== ""
+        ) {
+            clearSearchBox();
+            window.mapManager.searchMarkers("", true);
         }
-    );
 
-    container.appendChild(allButton);
+        refreshResultsList();
+    };
 
-    /*
-     * Build one button for each category that
-     * actually contains active resources.
-     */
-    for (const category of orderedCategories) {
+    const addButton = (label, category) => {
         const button =
             document.createElement("button");
 
         button.type = "button";
-        button.textContent = category;
+        button.textContent = label;
         button.dataset.category = category;
 
         button.classList.add(
@@ -233,15 +403,24 @@ function initializeFilterButtons() {
 
         button.addEventListener(
             "click",
-            () => {
-                window.mapManager.filterMarkers(
-                    category
-                );
-                updateNearbyResults();
-            }
+            () => handleFilterClick(category)
         );
 
         container.appendChild(button);
+    };
+
+    /*
+     * "All" always exists because it represents
+     * every currently active resource.
+     */
+    addButton("All", "All");
+
+    /*
+     * One button for each category that
+     * actually contains active resources.
+     */
+    for (const category of orderedCategories) {
+        addButton(category, category);
     }
 
     console.log(
@@ -254,25 +433,20 @@ function initializeFilterButtons() {
 }
 
 function initializeResourceSearch() {
-    const searchControls =
-        document.querySelector(
-            ".resource-search__controls"
-        );
-
-    const searchInput =
-        document.getElementById("resource-search-input");
+    const {
+        searchControls,
+        searchInput,
+        clearButton,
+        resultsText,
+        resultsList,
+        nearMeStatus,
+        radiusContainer,
+        radiusSelect,
+        resetButton
+    } = getUiElements();
 
     const searchButton =
         document.getElementById("resource-search-submit");
-
-    const clearButton =
-        document.getElementById("resource-search-clear");
-
-    const resultsText =
-        document.getElementById("resource-search-results");
-
-    const resultsList =
-        document.getElementById("resource-results-list");
 
     if (
         !searchControls ||
@@ -293,22 +467,14 @@ function initializeResourceSearch() {
         return;
     }
 
-    const runSearch = () => {
+    /*
+     * CHANGED (Veterans map):
+     * A 5-digit ZIP shows resources within a distance of
+     * that ZIP (10 miles to start, changeable with the
+     * Distance dropdown). Anything else is a text search.
+     */
+    const runSearch = async () => {
         const query = searchInput.value.trim();
-
-        const visibleMarkers =
-            window.mapManager.searchMarkers(query, true);
-
-        const resultCount = visibleMarkers.length;
-
-        resultsList.innerHTML = "";
-
-        for (const marker of visibleMarkers) {
-            const card =
-                window.resultCardBuilder.build(marker);
-
-            resultsList.appendChild(card);
-        }
 
         clearButton.hidden = query === "";
 
@@ -317,16 +483,81 @@ function initializeResourceSearch() {
             query !== ""
         );
 
-        if (query === "") {
-            resultsText.textContent = "";
-            resultsList.innerHTML = "";
-            return;
+        /*
+         * If the Distance dropdown is already showing,
+         * keep the visitor's chosen distance for this
+         * search instead of going back to the default.
+         */
+        const chosenRadius =
+            radiusContainer &&
+            !radiusContainer.hidden &&
+            radiusSelect
+                ? radiusSelect.value
+                : null;
+
+        // A new search replaces an earlier ZIP search.
+        if (searchState.zipActive) {
+            clearLocation();
         }
 
-        resultsText.textContent =
-            resultCount === 1
-                ? "1 resource found"
-                : `${resultCount} resources found`;
+        if (/^\d{5}$/.test(query)) {
+
+            resultsText.textContent =
+                `Looking up ZIP ${query}...`;
+
+            try {
+                const location =
+                    await lookUpZipLocation(query);
+
+                // The ZIP is a location, not text to match.
+                window.mapManager.searchMarkers("", false);
+
+                window.mapManager.createUserLocationMarker(
+                    location,
+                    `ZIP ${query}`
+                );
+
+                const radius =
+                    chosenRadius || ZIP_SEARCH_RADIUS_MILES;
+
+                if (radiusSelect) {
+                    radiusSelect.value = radius;
+                }
+
+                window.mapManager.setNearMeRadius(
+                    radius
+                );
+
+                if (radiusContainer) {
+                    radiusContainer.hidden = false;
+                }
+
+                if (resetButton) {
+                    resetButton.hidden = false;
+                }
+
+                if (nearMeStatus) {
+                    nearMeStatus.textContent =
+                        `Showing resources near ZIP ${query}.`;
+                }
+
+                searchState.zipActive = true;
+
+                updateNearbyResults();
+                return;
+            }
+            catch (zipError) {
+                // Falls back to a normal text search.
+                console.warn(
+                    "ZIP lookup failed; using text search instead.",
+                    zipError
+                );
+            }
+        }
+
+        window.mapManager.searchMarkers(query, true);
+
+        refreshResultsList();
     };
 
     searchButton.addEventListener("click", runSearch);
@@ -339,18 +570,15 @@ function initializeResourceSearch() {
     });
 
     clearButton.addEventListener("click", () => {
-        searchInput.value = "";
+        clearSearchBox();
+
+        if (searchState.zipActive) {
+            clearLocation();
+        }
 
         window.mapManager.searchMarkers("", true);
 
-        clearButton.hidden = true;
-
-        searchControls.classList.remove(
-            "resource-search__controls--with-clear"
-        );
-
-        resultsText.textContent = "";
-        resultsList.innerHTML = "";
+        refreshResultsList();
 
         searchInput.focus();
     });
@@ -363,25 +591,12 @@ function initializeNearMe() {
             "near-me-button"
         );
 
-    const resetButton =
-        document.getElementById(
-            "near-me-reset"
-        );
-
-    const status =
-        document.getElementById(
-            "near-me-status"
-        );
-
-    const radiusContainer =
-        document.getElementById(
-            "near-me-radius-container"
-        );
-
-    const radiusSelect =
-        document.getElementById(
-            "near-me-radius"
-        );
+    const {
+        nearMeStatus: status,
+        radiusContainer,
+        radiusSelect,
+        resetButton
+    } = getUiElements();
 
     if (
         !button ||
@@ -434,9 +649,8 @@ function initializeNearMe() {
                           "this site in your browser settings, " +
                           "then try again."
                         : "We couldn't find your location. " +
-                          "Please try again, or use the search " +
-                          "box to look up resources by name or " +
-                          "city.";
+                          "Please try again, or search by ZIP " +
+                          "code to see resources nearby.";
 
                 button.disabled = false;
                 return;
@@ -444,14 +658,17 @@ function initializeNearMe() {
 
             try {
 
+                // Real location replaces an earlier ZIP search.
+                if (searchState.zipActive) {
+                    clearSearchBox();
+                    searchState.zipActive = false;
+                }
+
                 window.mapManager
                     .createUserLocationMarker(
                         location
                     );
 
-                /*
-                 * Default Near Me radius.
-                 */
                 window.mapManager
                     .setNearMeRadius(
                         radiusSelect.value
@@ -502,33 +719,14 @@ function initializeNearMe() {
         "click",
         () => {
 
-            window.mapManager
-                .clearUserLocation();
-
-            const resultsList =
-                document.getElementById(
-                    "resource-results-list"
-                );
-
-            const resultsText =
-                document.getElementById(
-                    "resource-search-results"
-                );
-
-            if (resultsList) {
-                resultsList.innerHTML = "";
+            // Resetting a ZIP search also empties the box.
+            if (searchState.zipActive) {
+                clearSearchBox();
             }
 
-            if (resultsText) {
-                resultsText.textContent = "";
-            }
+            clearLocation();
 
-            status.textContent = "";
-
-            resetButton.hidden = true;
-            radiusContainer.hidden = true;
-
-            radiusSelect.value = "5";
+            refreshResultsList();
         }
     );
 }

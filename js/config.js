@@ -138,6 +138,6 @@ const CONFIG = {
         singleResourceZoom: 13,
 
         // Google Maps Map ID
-        mapId: "YOUR_MAP_ID"
+        mapId: "9941f76573825d30e9f49893"
     }
 };

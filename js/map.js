@@ -180,7 +180,8 @@ class MapManager {
         });
     }
 
-    createUserLocationMarker(location) {
+    // CHANGED (Veterans map): optional title, used for ZIP searches.
+    createUserLocationMarker(location, markerTitle = "Your Location") {
 
         if (this.userLocationMarker) {
             this.userLocationMarker.map = null;
@@ -200,7 +201,7 @@ class MapManager {
             new this.AdvancedMarkerElement({
                 position: location,
                 map: this.map,
-                title: "Your Location"
+                title: markerTitle
             });
 
         this.userLocationMarker.append(pin);
